@@ -1,8 +1,8 @@
 # Gradle files
 .gradle/
 build/
-.kotlin/
-
+app/build/
+.idea/
 # Local configuration file (sdk path, etc)
 local.properties
 
