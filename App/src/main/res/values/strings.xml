@@ -1,3 +1,10 @@
+
 <resources>
-    <string name="app_name">PocketMarket</string>
+<string name="app_name">PocketMarket</string>
+<string name="common_retry">إعادة المحاولة</string>
+<string name="common_loading">جاري التحميل...</string>
+<string name="common_empty_title">لا توجد عناصر</string>
+<string name="common_empty_description">لم نتمكن من العثور على أي عناصر لعرضها حالياً.</string>
+<string name="common_error_title">حدث خطأ ما</string>
+<string name="common_error_default">يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</string>
 </resources>
