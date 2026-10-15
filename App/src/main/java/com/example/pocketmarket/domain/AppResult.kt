@@ -1,4 +1,4 @@
-package com.example.pocketmarket.domain
+package com.example.pocketmarket.domain.util
 
 
 
