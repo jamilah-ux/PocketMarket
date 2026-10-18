@@ -7,4 +7,11 @@
 <string name="common_empty_description">لم نتمكن من العثور على أي عناصر لعرضها حالياً.</string>
 <string name="common_error_title">حدث خطأ ما</string>
 <string name="common_error_default">يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</string>
+<string name="home_title">PocketMarket</string>
+<string name="home_search_hint">ابحث عن المنتجات...</string>
+<string name="home_banner_title">عروض الموسم الحصرية</string>
+<string name="home_banner_subtitle">خصومات تصل إلى 40% على الإلكترونيات</string>
+<string name="home_categories_title">التصنيفات</string>
+<string name="home_featured_title">منتجات مميزة</string>
+<string name="category_all">الكل</string>
 </resources>
