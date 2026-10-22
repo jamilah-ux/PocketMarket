@@ -12,8 +12,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.pocketmarket.fixtures.MockProducts
-import com.example.pocketmarket.ui.home.HomeScreen
-import com.example.pocketmarket.ui.home.HomeUiState
+import com.example.pocketmarket.fixtures.generateLargeProductList
+import com.example.pocketmarket.ui.catalog.CatalogScreen
+import com.example.pocketmarket.ui.catalog.CatalogUiState
+import com.example.pocketmarket.ui.catalog.ViewLayoutMode
 import com.example.pocketmarket.ui.theme.PocketMarketTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,30 +27,41 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val allCategories = remember {
-                        listOf("All") + MockProducts.items.map { it.category.toString() }.distinct()
-                    }
-                    var selectedCategory by remember { mutableStateOf("All") }
-
-                    val displayedProducts = remember(selectedCategory) {
-                        if (selectedCategory == "All") {
-                            MockProducts.items
-                        } else {
-                            MockProducts.items.filter { it.category.toString() == selectedCategory }
-                        }
+                    val largeList = remember { generateLargeProductList(1000) }
+                    val categories = remember {
+                        listOf("All") + MockProducts.items.map { it.category.value }.distinct()
                     }
 
-                    HomeScreen(
-                        uiState = HomeUiState.Content(
-                            products = displayedProducts,
-                            categories = allCategories,
-                            selectedCategory = selectedCategory
-                        ),
-                        onCategorySelected = { category ->
-                            selectedCategory = category
+                    var uiState by remember {
+                        mutableStateOf(
+                            CatalogUiState(
+                                products = largeList,
+                                categories = categories
+                            )
+                        )
+                    }
+
+                    CatalogScreen(
+                        state = uiState,
+                        onSearchChange = { query ->
+                            uiState = uiState.copy(searchQuery = query)
                         },
-                        onAddToCartClick = {
-                            // سيتم ربط سلة المشتريات في المهام القادمة
+                        onCategorySelect = { category ->
+                            uiState = uiState.copy(selectedCategory = category)
+                        },
+                        onSortOptionChange = { sort ->
+                            uiState = uiState.copy(sortOption = sort)
+                        },
+                        onToggleLayoutMode = {
+                            val newMode = if (uiState.layoutMode == ViewLayoutMode.GRID) {
+                                ViewLayoutMode.LIST
+                            } else {
+                                ViewLayoutMode.GRID
+                            }
+                            uiState = uiState.copy(layoutMode = newMode)
+                        },
+                        onAddToCart = { product ->
+                            // سيتم ربط الإضافة للسلة لاحقاً
                         }
                     )
                 }

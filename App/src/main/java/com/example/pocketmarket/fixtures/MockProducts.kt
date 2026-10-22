@@ -37,3 +37,13 @@ import com.example.pocketmarket.domain.model.Product
             Product(30, "Key Holder Wooden", "Attractive decorative hanging wooden key shelf", 30.0, 2.92, 4.92, 54, "Golden", Category("home-decoration"), "https://cdn.dummyjson.com/product-images/30/thumbnail.jpg")
         )
     }
+fun generateLargeProductList(count: Int = 1000): List<Product> {
+    val baseItems = MockProducts.items
+    return (1..count).map { index ->
+        val template = baseItems[(index - 1) % baseItems.size]
+        template.copy(
+            id = index.toLong(),
+            title = "${template.title} #$index"
+        )
+    }
+}
