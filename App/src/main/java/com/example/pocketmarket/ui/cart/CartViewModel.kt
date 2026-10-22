@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
+// Task 10: Buffered channel to handle one-off UI events (Snackbar/Checkout) safely without duplicate triggers
 sealed interface CartAction {
     data class AddProduct(val product: Product, val quantity: Int) : CartAction
     data class UpdateQuantity(val item: CartItem, val newQuantity: Int) : CartAction
