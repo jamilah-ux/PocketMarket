@@ -14,4 +14,13 @@
 <string name="home_categories_title">التصنيفات</string>
 <string name="home_featured_title">منتجات مميزة</string>
 <string name="category_all">الكل</string>
+<string name="catalog_title">قائمة المنتجات</string>
+<string name="catalog_search_hint">ابحث بالاسم أو الوصف...</string>
+<string name="catalog_sort_label">ترتيب حسب</string>
+<string name="catalog_sort_name_asc">الاسم (أ - ي)</string>
+<string name="catalog_sort_price_low">السعر: من الأقل للأعلى</string>
+<string name="catalog_sort_price_high">السعر: من الأعلى للأقل</string>
+<string name="catalog_no_results_title">لم نجد أي نتائج</string>
+<string name="catalog_no_results_desc">جرّب استخدام كلمات بحث أخرى أو إزالة الفلاتر.</string>
+
 </resources>
