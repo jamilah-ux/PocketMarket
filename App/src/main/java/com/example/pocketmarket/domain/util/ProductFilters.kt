@@ -8,7 +8,7 @@ fun List<Product>.filterByCategory(category: Category): List<Product> =
     filter { it.category == category }
 
 fun List<Product>.filterInStockOnly(): List<Product> =
-    filter { it.isInStock }
+    filter { it.stock > 0 }
 
 fun List<Product>.sortByPrice(ascending: Boolean = true): List<Product> =
     if (ascending) sortedBy { it.discountedPrice } else sortedByDescending { it.discountedPrice }
