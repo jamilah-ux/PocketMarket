@@ -22,5 +22,16 @@
 <string name="catalog_sort_price_high">السعر: من الأعلى للأقل</string>
 <string name="catalog_no_results_title">لم نجد أي نتائج</string>
 <string name="catalog_no_results_desc">جرّب استخدام كلمات بحث أخرى أو إزالة الفلاتر.</string>
-
+    <string name="detail_title">تفاصيل المنتج</string>
+    <string name="detail_stock_available">المتوفر في المخزون: %1$d</string>
+    <string name="detail_out_of_stock">نفدت الكمية</string>
+    <string name="detail_add_to_cart">إضافة إلى السلة</string>
+    <string name="detail_description_title">الوصف</string>
+    <string name="cart_title">سلة المشتريات</string>
+    <string name="cart_empty_title">سلتك فارغة حالياً</string>
+    <string name="cart_empty_desc">تصفح المنتجات وأضف ما يعجبك للمتابعة.</string>
+    <string name="cart_subtotal">المجموع الفرعي</string>
+    <string name="cart_total">الإجمالي النهائي</string>
+    <string name="cart_checkout">متابعة الشراء</string>
+    <string name="cart_remove">حذف</string>
 </resources>
