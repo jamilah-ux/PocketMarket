@@ -21,8 +21,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -45,15 +45,14 @@ import com.example.pocketmarket.ui.settings.SettingsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
-    catalogViewModel: CatalogViewModel = viewModel(),
-    cartViewModel: CartViewModel = viewModel(),
+    catalogViewModel: CatalogViewModel = hiltViewModel(),
+    cartViewModel: CartViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val catalogState by catalogViewModel.uiState.collectAsStateWithLifecycle()
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // الاستماع لأحداث الـ Cart ViewModel بأمان (Task 10)
     LaunchedEffect(Unit) {
         cartViewModel.effect.collect { effect ->
             when (effect) {
@@ -77,9 +76,13 @@ fun AppNavGraph(
             startDestination = ScreenRoute.Catalog.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            // 1. شاشة الكتالوج
             composable(route = ScreenRoute.Catalog.route) {
                 if (catalogState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         CircularProgressIndicator()
                     }
                 } else {
@@ -103,6 +106,7 @@ fun AppNavGraph(
                 }
             }
 
+            // 2. شاشة تفاصيل المنتج مع دعم الـ Deep Link
             composable(
                 route = ScreenRoute.Detail.route,
                 arguments = listOf(navArgument("productId") { type = NavType.LongType }),
@@ -133,7 +137,10 @@ fun AppNavGraph(
                                 title = { Text("خطأ في المنتج") },
                                 navigationIcon = {
                                     IconButton(onClick = { navController.popBackStack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Back"
+                                        )
                                     }
                                 }
                             )
@@ -149,6 +156,7 @@ fun AppNavGraph(
                 }
             }
 
+            // 3. شاشة السلة
             composable(route = ScreenRoute.Cart.route) {
                 CartScreen(
                     items = cartState.items,
@@ -165,6 +173,7 @@ fun AppNavGraph(
                 )
             }
 
+            // 4. شاشة الإعدادات
             composable(route = ScreenRoute.Settings.route) {
                 SettingsScreen(onBackClick = { navController.popBackStack() })
             }

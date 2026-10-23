@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.pocketmarket.domain.model.CartItem
 import com.example.pocketmarket.domain.model.Product
 import com.example.pocketmarket.ui.common.UiEffect
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,23 +14,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-// Task 10: Buffered channel to handle one-off UI events (Snackbar/Checkout) safely without duplicate triggers
+
 sealed interface CartAction {
-    data class AddProduct(val product: Product, val quantity: Int) : CartAction
-    data class UpdateQuantity(val item: CartItem, val newQuantity: Int) : CartAction
+    data class AddProduct(val product: Product, val quantity: Int = 1) : CartAction
+    data class UpdateQuantity(val item: CartItem, val quantity: Int) : CartAction
     data class RemoveItem(val item: CartItem) : CartAction
-    object Checkout : CartAction
+    data object ClearCart : CartAction
+    data object Checkout : CartAction
 }
 
 data class CartUiState(
     val items: List<CartItem> = emptyList(),
-    val isCheckingOut: Boolean = false
-) {
-    val totalAmount: Double
-        get() = items.sumOf { it.totalPrice }
-}
+    val totalAmount: Double = 0.0
+)
 
-class CartViewModel : ViewModel() {
+@HiltViewModel
+class CartViewModel @Inject constructor() : ViewModel() {
 
     private val _uiState = MutableStateFlow(CartUiState())
     val uiState: StateFlow<CartUiState> = _uiState.asStateFlow()
@@ -38,49 +39,74 @@ class CartViewModel : ViewModel() {
 
     fun onAction(action: CartAction) {
         when (action) {
-            is CartAction.AddProduct -> {
-                _uiState.update { state ->
-                    val existing = state.items.find { it.product.id == action.product.id }
-                    val updatedList = if (existing != null) {
-                        state.items.map {
-                            if (it.product.id == action.product.id) {
-                                it.copy(quantity = (it.quantity + action.quantity).coerceAtMost(action.product.stock))
-                            } else it
-                        }
-                    } else {
-                        state.items + CartItem(action.product, action.quantity)
-                    }
-                    state.copy(items = updatedList)
-                }
-                viewModelScope.launch {
-                    _effect.send(UiEffect.ShowSnackbar("تمت إضافة المنتج إلى السلة"))
-                }
-            }
-            is CartAction.UpdateQuantity -> {
-                _uiState.update { state ->
-                    val updated = state.items.map {
-                        if (it.product.id == action.item.product.id) it.copy(quantity = action.newQuantity) else it
-                    }
-                    state.copy(items = updated)
-                }
-            }
-            is CartAction.RemoveItem -> {
-                _uiState.update { state ->
-                    state.copy(items = state.items.filterNot { it.product.id == action.item.product.id })
-                }
-                viewModelScope.launch {
-                    _effect.send(UiEffect.ShowSnackbar("تم حذف المنتج من السلة"))
-                }
-            }
-            CartAction.Checkout -> {
-                viewModelScope.launch {
-                    _uiState.update { it.copy(isCheckingOut = true) }
-                    // محاكاة إتمام الشراء
-                    kotlinx.coroutines.delay(800)
-                    _uiState.update { it.copy(items = emptyList(), isCheckingOut = false) }
-                    _effect.send(UiEffect.ShowSnackbar("تم إتمام الطلب بنجاح! شكرًا لتسوقك."))
-                }
-            }
+            is CartAction.AddProduct -> addProduct(action.product, action.quantity)
+            is CartAction.UpdateQuantity -> updateQuantity(action.item, action.quantity)
+            is CartAction.RemoveItem -> removeItem(action.item)
+            is CartAction.ClearCart -> clearCart()
+            is CartAction.Checkout -> checkout()
         }
+    }
+
+    private fun addProduct(product: Product, quantity: Int) {
+        _uiState.update { currentState ->
+            val existingItemIndex = currentState.items.indexOfFirst { it.product.id == product.id }
+            val updatedItems = if (existingItemIndex != -1) {
+                currentState.items.toMutableList().apply {
+                    val currentItem = this[existingItemIndex]
+                    this[existingItemIndex] = currentItem.copy(quantity = currentItem.quantity + quantity)
+                }
+            } else {
+                currentState.items + CartItem(product = product, quantity = quantity)
+            }
+            currentState.copy(
+                items = updatedItems,
+                totalAmount = calculateTotal(updatedItems)
+            )
+        }
+        viewModelScope.launch {
+            _effect.send(UiEffect.ShowSnackbar("تمت إضافة المنتج إلى السلة"))
+        }
+    }
+
+    private fun updateQuantity(item: CartItem, quantity: Int) {
+        if (quantity <= 0) {
+            removeItem(item)
+            return
+        }
+        _uiState.update { currentState ->
+            val updatedItems = currentState.items.map {
+                if (it.product.id == item.product.id) it.copy(quantity = quantity) else it
+            }
+            currentState.copy(
+                items = updatedItems,
+                totalAmount = calculateTotal(updatedItems)
+            )
+        }
+    }
+
+    private fun removeItem(item: CartItem) {
+        _uiState.update { currentState ->
+            val updatedItems = currentState.items.filterNot { it.product.id == item.product.id }
+            currentState.copy(
+                items = updatedItems,
+                totalAmount = calculateTotal(updatedItems)
+            )
+        }
+    }
+
+    private fun clearCart() {
+        _uiState.update { it.copy(items = emptyList(), totalAmount = 0.0) }
+    }
+
+    private fun checkout() {
+        if (_uiState.value.items.isEmpty()) return
+        clearCart()
+        viewModelScope.launch {
+            _effect.send(UiEffect.ShowSnackbar("تم إتمام الطلب بنجاح! شكرًا لتسوقك."))
+        }
+    }
+
+    private fun calculateTotal(items: List<CartItem>): Double {
+        return items.sumOf { it.product.price * it.quantity }
     }
 }
