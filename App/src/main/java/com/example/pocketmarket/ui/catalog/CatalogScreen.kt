@@ -146,13 +146,27 @@ fun CatalogScreen(
 
             when {
                 state.isLoading -> {
-                    PocketLoadingState()
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PocketLoadingState()
+                    }
                 }
                 filteredAndSortedProducts.isEmpty() -> {
-                    PocketEmptyState(
-                        title = stringResource(R.string.catalog_no_results_title),
-                        description = stringResource(R.string.catalog_no_results_desc)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        PocketEmptyState(
+                            title = stringResource(R.string.catalog_no_results_title),
+                            description = stringResource(R.string.catalog_no_results_desc)
+                        )
+                    }
                 }
                 state.layoutMode == ViewLayoutMode.GRID -> {
                     LazyVerticalGrid(
@@ -160,7 +174,9 @@ fun CatalogScreen(
                         contentPadding = PaddingValues(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
                     ) {
                         items(filteredAndSortedProducts, key = { it.id }) { product ->
                             PocketGridProductCard(
@@ -174,7 +190,9 @@ fun CatalogScreen(
                     LazyColumn(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
                     ) {
                         items(filteredAndSortedProducts, key = { it.id }) { product ->
                             PocketProductCard(
@@ -185,6 +203,6 @@ fun CatalogScreen(
                     }
                 }
             }
+            }
         }
     }
-}
