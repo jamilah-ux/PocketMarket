@@ -100,6 +100,10 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.52")
     kapt("com.google.dagger:hilt-compiler:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    // Paging 3
+    implementation("androidx.paging:paging-runtime-ktx:3.3.2")
+    implementation("androidx.paging:paging-compose:3.3.2")
+    testImplementation("androidx.paging:paging-testing:3.3.2")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
