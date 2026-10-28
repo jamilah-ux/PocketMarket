@@ -34,7 +34,6 @@ import com.example.pocketmarket.ui.cart.CartScreen
 import com.example.pocketmarket.ui.cart.CartViewModel
 import com.example.pocketmarket.ui.catalog.CatalogAction
 import com.example.pocketmarket.ui.catalog.CatalogScreen
-import com.example.pocketmarket.ui.catalog.CatalogUiState
 import com.example.pocketmarket.ui.catalog.CatalogViewModel
 import com.example.pocketmarket.ui.common.UiEffect
 import com.example.pocketmarket.ui.components.PocketEmptyState
@@ -53,6 +52,7 @@ fun AppNavGraph(
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // الاستماع لتأثيرات السلة
     LaunchedEffect(Unit) {
         cartViewModel.effect.collect { effect ->
             when (effect) {
@@ -61,6 +61,24 @@ fun AppNavGraph(
                         message = effect.message,
                         actionLabel = effect.actionLabel
                     )
+                }
+                is UiEffect.Navigate -> navController.navigate(effect.route)
+            }
+        }
+    }
+
+    // الاستماع لتأثيرات الكتالوج (إظهار رسالة الخطأ في الـ Snackbar أيضاً)
+    LaunchedEffect(Unit) {
+        catalogViewModel.effect.collect { effect ->
+            when (effect) {
+                is UiEffect.ShowSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = effect.actionLabel
+                    )
+                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                        catalogViewModel.onAction(CatalogAction.Refresh)
+                    }
                 }
                 is UiEffect.Navigate -> navController.navigate(effect.route)
             }
@@ -86,15 +104,9 @@ fun AppNavGraph(
                         CircularProgressIndicator()
                     }
                 } else {
+                    // نمرر الـ catalogState بالكامل مباشرة دون إعادة بناء تفقد errorMessage!
                     CatalogScreen(
-                        state = CatalogUiState(
-                            products = catalogState.products,
-                            categories = catalogState.categories,
-                            searchQuery = catalogState.searchQuery,
-                            selectedCategory = catalogState.selectedCategory,
-                            sortOption = catalogState.sortOption,
-                            layoutMode = catalogState.layoutMode
-                        ),
+                        state = catalogState,
                         onSearchChange = { catalogViewModel.onAction(CatalogAction.UpdateSearch(it)) },
                         onCategorySelect = { catalogViewModel.onAction(CatalogAction.SelectCategory(it)) },
                         onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },

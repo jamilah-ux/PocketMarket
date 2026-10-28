@@ -14,11 +14,13 @@ enum class ViewLayoutMode {
 }
 
 data class CatalogUiState(
+    val isLoading: Boolean = false,
     val products: List<Product> = emptyList(),
     val categories: List<String> = emptyList(),
-    val selectedCategory: String = "All",
     val searchQuery: String = "",
+    val selectedCategory: String = "All",
     val sortOption: SortOption = SortOption.NAME_ASC,
     val layoutMode: ViewLayoutMode = ViewLayoutMode.GRID,
-    val isLoading: Boolean = false
+    val errorMessage: String? = null
+
 )
