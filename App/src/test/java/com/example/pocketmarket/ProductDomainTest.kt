@@ -40,7 +40,9 @@ class ProductDomainTest {
             rating = 3.0,
             stock = 5,
             category = Category("test"),
-            thumbnail = ""
+            thumbnail = "",
+            discountPercentage = 0.0,
+            images = emptyList()
         )
     }
 
