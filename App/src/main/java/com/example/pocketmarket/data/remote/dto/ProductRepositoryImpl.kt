@@ -1,6 +1,10 @@
 package com.example.pocketmarket.data.remote.dto
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.example.pocketmarket.data.remote.DummyJsonApi
+import com.example.pocketmarket.data.remote.ProductPagingSource
 import com.example.pocketmarket.data.remote.retryWithBackoff
 import com.example.pocketmarket.di.IoDispatcher
 import com.example.pocketmarket.domain.model.AppError
@@ -49,6 +53,17 @@ class ProductRepositoryImpl @Inject constructor(
         } catch (e: Throwable) {
             Result.failure(mapToAppError(e))
         }
+    }
+
+    override fun getPagedProducts(): Flow<PagingData<Product>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = ProductPagingSource.PAGE_SIZE,
+                enablePlaceholders = false,
+                initialLoadSize = ProductPagingSource.PAGE_SIZE
+            ),
+            pagingSourceFactory = { ProductPagingSource(api) }
+        ).flow.flowOn(ioDispatcher)
     }
 
     /**

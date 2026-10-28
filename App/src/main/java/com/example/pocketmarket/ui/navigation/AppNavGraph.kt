@@ -2,11 +2,9 @@ package com.example.pocketmarket.ui.navigation
 
 import android.content.Intent
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -19,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,7 +64,7 @@ fun AppNavGraph(
         }
     }
 
-    // الاستماع لتأثيرات الكتالوج (إظهار رسالة الخطأ في الـ Snackbar أيضاً)
+    // الاستماع لتأثيرات الكتالوج
     LaunchedEffect(Unit) {
         catalogViewModel.effect.collect { effect ->
             when (effect) {
@@ -94,28 +91,20 @@ fun AppNavGraph(
             startDestination = ScreenRoute.Catalog.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 1. شاشة الكتالوج
+            // 1. شاشة الكتالوج مع تمرير pagedProducts و onRefresh
             composable(route = ScreenRoute.Catalog.route) {
-                if (catalogState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    // نمرر الـ catalogState بالكامل مباشرة دون إعادة بناء تفقد errorMessage!
-                    CatalogScreen(
-                        state = catalogState,
-                        onSearchChange = { catalogViewModel.onAction(CatalogAction.UpdateSearch(it)) },
-                        onCategorySelect = { catalogViewModel.onAction(CatalogAction.SelectCategory(it)) },
-                        onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },
-                        onToggleLayoutMode = { catalogViewModel.onAction(CatalogAction.ToggleLayout) },
-                        onAddToCart = { product ->
-                            navController.navigate(ScreenRoute.Detail.createRoute(product.id))
-                        }
-                    )
-                }
+                CatalogScreen(
+                    state = catalogState,
+                    pagedProducts = catalogViewModel.pagedProducts,
+                    onSearchChange = { catalogViewModel.onAction(CatalogAction.UpdateSearch(it)) },
+                    onCategorySelect = { catalogViewModel.onAction(CatalogAction.SelectCategory(it)) },
+                    onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },
+                    onToggleLayoutMode = { catalogViewModel.onAction(CatalogAction.ToggleLayout) },
+                    onAddToCart = { product ->
+                        navController.navigate(ScreenRoute.Detail.createRoute(product.id))
+                    },
+                    onRefresh = { catalogViewModel.onAction(CatalogAction.Refresh) }
+                )
             }
 
             // 2. شاشة تفاصيل المنتج مع دعم الـ Deep Link

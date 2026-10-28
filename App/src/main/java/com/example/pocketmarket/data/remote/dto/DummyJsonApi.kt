@@ -10,19 +10,19 @@ interface DummyJsonApi {
 
     @GET("products")
     suspend fun getProducts(
-        @Query("limit") limit: Int = 30
+        @Query("limit") limit: Int = 20,
+        @Query("skip") skip: Int = 0
     ): ProductsResponseDto
-
-    @GET("products/search")
-    suspend fun searchProducts(
-        @Query("q") query: String
-    ): ProductsResponseDto
-
-    @GET("products/categories")
-    suspend fun getCategories(): List<String>
 
     @GET("products/{id}")
     suspend fun getProductDetail(
         @Path("id") id: Long
     ): ProductDto
+
+    @GET("products/search")
+    suspend fun searchProducts(
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 20,
+        @Query("skip") skip: Int = 0
+    ): ProductsResponseDto
 }

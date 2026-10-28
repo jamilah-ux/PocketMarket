@@ -1,4 +1,5 @@
 package com.example.pocketmarket.ui.catalog
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,12 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,14 +28,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.example.pocketmarket.R
 import com.example.pocketmarket.domain.model.Product
 import com.example.pocketmarket.ui.components.PocketChip
@@ -41,38 +46,23 @@ import com.example.pocketmarket.ui.components.PocketGridProductCard
 import com.example.pocketmarket.ui.components.PocketLoadingState
 import com.example.pocketmarket.ui.components.PocketProductCard
 import com.example.pocketmarket.ui.components.PocketTextField
+import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CatalogScreen(
     state: CatalogUiState,
+    pagedProducts: Flow<PagingData<Product>>,
     onSearchChange: (String) -> Unit,
     onCategorySelect: (String) -> Unit,
     onSortOptionChange: (SortOption) -> Unit,
     onToggleLayoutMode: () -> Unit,
     onAddToCart: (Product) -> Unit,
+    onRefresh: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val filteredAndSortedProducts by remember(state) {
-        derivedStateOf {
-            state.products
-                .filter { product ->
-                    val matchesCategory = state.selectedCategory == "All" ||
-                            product.category.value.contains(state.selectedCategory, ignoreCase = true)
-                    val matchesSearch = state.searchQuery.isBlank() ||
-                            product.title.contains(state.searchQuery, ignoreCase = true) ||
-                            product.description.contains(state.searchQuery, ignoreCase = true)
-                    matchesCategory && matchesSearch
-                }
-                .sortedWith { p1, p2 ->
-                    when (state.sortOption) {
-                        SortOption.NAME_ASC -> p1.title.compareTo(p2.title, ignoreCase = true)
-                        SortOption.PRICE_LOW_HIGH -> p1.discountedPrice.compareTo(p2.discountedPrice)
-                        SortOption.PRICE_HIGH_LOW -> p2.discountedPrice.compareTo(p1.discountedPrice)
-                    }
-                }
-        }
-    }
+    val lazyPagingItems = pagedProducts.collectAsLazyPagingItems()
+    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
 
     Scaffold(
         topBar = {
@@ -144,87 +134,182 @@ fun CatalogScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        PocketLoadingState()
-                    }
-                }
-                // 1. إذا كان هناك خطأ (مثل انقطاع الإنترنت)، اعرض رسالة الخطأ مع زر إعادة المحاولة
-                state.errorMessage != null -> {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    onRefresh()
+                    lazyPagingItems.refresh()
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                when {
+                    // التحميل الأولي الكامل
+                    lazyPagingItems.loadState.refresh is LoadState.Loading && lazyPagingItems.itemCount == 0 -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = state.errorMessage,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error
+                            PocketLoadingState()
+                        }
+                    }
+
+                    // خطأ التحميل الأولي
+                    lazyPagingItems.loadState.refresh is LoadState.Error && lazyPagingItems.itemCount == 0 -> {
+                        val error = (lazyPagingItems.loadState.refresh as LoadState.Error).error
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = error.localizedMessage ?: "حدث خطأ أثناء تحميل البيانات",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Button(onClick = { lazyPagingItems.retry() }) {
+                                    Text("إعادة المحاولة")
+                                }
+                            }
+                        }
+                    }
+
+                    // قائمة فارغة بعد انتهاء التحميل
+                    lazyPagingItems.loadState.refresh is LoadState.NotLoading && lazyPagingItems.itemCount == 0 -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            PocketEmptyState(
+                                title = stringResource(R.string.catalog_no_results_title),
+                                description = stringResource(R.string.catalog_no_results_desc)
                             )
                         }
                     }
-                }
-                // 2. إذا لم يكن هناك خطأ لكن القائمة فارغة فعلاً (بحث لم يجد نتائج)
-                filteredAndSortedProducts.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        PocketEmptyState(
-                            title = stringResource(R.string.catalog_no_results_title),
-                            description = stringResource(R.string.catalog_no_results_desc)
-                        )
+
+                    // وضع الشبكة (Grid Mode)
+                    state.layoutMode == ViewLayoutMode.GRID -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(
+                                count = lazyPagingItems.itemCount,
+                                key = lazyPagingItems.itemKey { it.id }
+                            ) { index ->
+                                val product = lazyPagingItems[index]
+                                if (product != null) {
+                                    PocketGridProductCard(
+                                        product = product,
+                                        onAddToCartClick = { onAddToCart(product) }
+                                    )
+                                }
+                            }
+
+                            // مؤشر تحميل أو خطأ عند الوصول لأسفل القائمة (Append)
+                            when (val appendState = lazyPagingItems.loadState.append) {
+                                is LoadState.Loading -> {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    }
+                                }
+                                is LoadState.Error -> {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = "فشل تحميل المزيد من المنتجات",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Button(onClick = { lazyPagingItems.retry() }) {
+                                                Text("إعادة المحاولة")
+                                            }
+                                        }
+                                    }
+                                }
+                                else -> Unit
+                            }
+                        }
                     }
-                }
-                state.layoutMode == ViewLayoutMode.GRID -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                    ) {
-                        items(filteredAndSortedProducts, key = { it.id }) { product ->
-                            PocketGridProductCard(
-                                product = product,
-                                onAddToCartClick = { onAddToCart(product) }
-                            )
+
+                    // وضع القائمة (List Mode)
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(
+                                count = lazyPagingItems.itemCount,
+                                key = lazyPagingItems.itemKey { it.id }
+                            ) { index ->
+                                val product = lazyPagingItems[index]
+                                if (product != null) {
+                                    PocketProductCard(
+                                        product = product,
+                                        onAddToCartClick = { onAddToCart(product) }
+                                    )
+                                }
+                            }
+
+                            // مؤشر تحميل أو خطأ عند الوصول لأسفل القائمة (Append)
+                            when (val appendState = lazyPagingItems.loadState.append) {
+                                is LoadState.Loading -> {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    }
+                                }
+                                is LoadState.Error -> {
+                                    item {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = "فشل تحميل المزيد من المنتجات",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Button(onClick = { lazyPagingItems.retry() }) {
+                                                Text("إعادة المحاولة")
+                                            }
+                                        }
+                                    }
+                                }
+                                else -> Unit
+                            }
                         }
                     }
                 }
-                else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                    ) {
-                        items(filteredAndSortedProducts, key = { it.id }) { product ->
-                            PocketProductCard(
-                                product = product,
-                                onAddToCartClick = { onAddToCart(product) }
-                            )
-                        }
-                    }
-                }
-            }
             }
         }
     }
+}
