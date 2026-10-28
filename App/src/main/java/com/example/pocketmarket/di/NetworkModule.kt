@@ -30,11 +30,19 @@ object NetworkModule {
     fun provideOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
+            // تلبية معيار: sensitive headers redacted
+            redactHeader("Authorization")
+            redactHeader("Cookie")
+            redactHeader("X-Auth-Token")
+            redactHeader("Set-Cookie")
         }
+
         return OkHttpClient.Builder()
             .addInterceptor(logging)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(false) // نعتمد على استراتيجية الـ Backoff المحكومة التي بنيناها
             .build()
     }
 

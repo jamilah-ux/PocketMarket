@@ -2,10 +2,11 @@ package com.example.pocketmarket.ui.catalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pocketmarket.domain.model.Product
+import com.example.pocketmarket.domain.model.AppError
 import com.example.pocketmarket.domain.repository.ProductRepository
 import com.example.pocketmarket.ui.common.UiEffect
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,27 +24,18 @@ sealed interface CatalogAction {
     object Refresh : CatalogAction
 }
 
-data class CatalogState(
-    val isLoading: Boolean = false,
-    val products: List<Product> = emptyList(),
-    val categories: List<String> = emptyList(),
-    val searchQuery: String = "",
-    val selectedCategory: String = "All",
-    val sortOption: SortOption = SortOption.NAME_ASC,
-    val layoutMode: ViewLayoutMode = ViewLayoutMode.GRID,
-    val errorMessage: String? = null
-)
-
 @HiltViewModel
 class CatalogViewModel @Inject constructor(
     private val repository: ProductRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CatalogState(isLoading = true))
-    val uiState: StateFlow<CatalogState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(CatalogUiState(isLoading = true))
+    val uiState: StateFlow<CatalogUiState> = _uiState.asStateFlow()
 
     private val _effect = Channel<UiEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
+
+    private var fetchJob: Job? = null
 
     init {
         loadInitialData()
@@ -63,30 +55,55 @@ class CatalogViewModel @Inject constructor(
     }
 
     private fun loadInitialData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            repository.getProducts().collect { result ->
-                result.fold(
-                    onSuccess = { allProducts ->
-                        val categories = listOf("All") + allProducts.map { it.category.value }.distinct()
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                products = allProducts,
-                                categories = categories
-                            )
-                        }
-                    },
-                    onFailure = { error ->
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = error.localizedMessage ?: "حدث خطأ غير متوقع"
-                            )
-                        }
-                        _effect.send(UiEffect.ShowSnackbar("تعذر تحديث المنتجات", "إعادة المحاولة"))
-                    }
+        fetchJob?.cancel()
+        fetchJob = viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null
                 )
+            }
+            try {
+                repository.getProducts().collect { result ->
+                    result.fold(
+                        onSuccess = { allProducts ->
+                            val categories = listOf("All") + allProducts.map { it.category.value }.distinct()
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    products = allProducts,
+                                    categories = categories,
+                                    errorMessage = null
+                                )
+                            }
+                        },
+                        onFailure = { error ->
+                            val displayMessage = when (error) {
+                                is AppError -> error.toUserFriendlyMessage()
+                                else -> error.localizedMessage ?: "حدث خطأ غير متوقع"
+                            }
+
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = displayMessage
+                                )
+                            }
+
+                            _effect.send(UiEffect.ShowSnackbar(displayMessage, "إعادة المحاولة"))
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                val displayMessage = (e as? AppError)?.toUserFriendlyMessage()
+                    ?: "لا يوجد اتصال بالإنترنت. يرجى التحقق من الشبكة وإعادة المحاولة."
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = displayMessage
+                    )
+                }
+                _effect.send(UiEffect.ShowSnackbar(displayMessage, "إعادة المحاولة"))
             }
         }
     }

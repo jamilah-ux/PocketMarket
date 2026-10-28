@@ -155,6 +155,28 @@ fun CatalogScreen(
                         PocketLoadingState()
                     }
                 }
+                // 1. إذا كان هناك خطأ (مثل انقطاع الإنترنت)، اعرض رسالة الخطأ مع زر إعادة المحاولة
+                state.errorMessage != null -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = state.errorMessage,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+                // 2. إذا لم يكن هناك خطأ لكن القائمة فارغة فعلاً (بحث لم يجد نتائج)
                 filteredAndSortedProducts.isEmpty() -> {
                     Box(
                         modifier = Modifier
