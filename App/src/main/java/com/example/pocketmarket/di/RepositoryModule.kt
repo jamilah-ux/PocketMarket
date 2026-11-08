@@ -1,6 +1,6 @@
 package com.example.pocketmarket.di
 
-import com.example.pocketmarket.data.remote.dto.ProductRepositoryImpl
+import com.example.pocketmarket.data.repository.ProductRepositoryImpl
 import com.example.pocketmarket.domain.repository.ProductRepository
 import dagger.Binds
 import dagger.Module

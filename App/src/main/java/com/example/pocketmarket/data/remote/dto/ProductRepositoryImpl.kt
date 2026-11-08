@@ -1,8 +1,9 @@
-package com.example.pocketmarket.data.remote.dto
+package com.example.pocketmarket.data.repository
 
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.example.pocketmarket.data.local.dao.ProductDao
 import com.example.pocketmarket.data.remote.DummyJsonApi
 import com.example.pocketmarket.data.remote.ProductPagingSource
 import com.example.pocketmarket.data.remote.retryWithBackoff
@@ -11,36 +12,57 @@ import com.example.pocketmarket.domain.model.AppError
 import com.example.pocketmarket.domain.model.Product
 import com.example.pocketmarket.domain.repository.ProductRepository
 import com.example.pocketmarket.mapper.toDomain
+import com.example.pocketmarket.mapper.toDomainFromEntity
+import com.example.pocketmarket.mapper.toEntityList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ProductRepositoryImpl @Inject constructor(
     private val api: DummyJsonApi,
+    private val productDao: ProductDao,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ProductRepository {
 
+    private var lastSyncTimestamp: Long = 0
+    private val cacheTimeoutMillis = TimeUnit.MINUTES.toMillis(5)
+
     override fun getProducts(): Flow<Result<List<Product>>> = flow {
-        val result: Result<List<Product>> = try {
-            val products = retryWithBackoff(maxRetries = 3, initialDelayMs = 1000L) {
-                val response = api.getProducts()
-                response.products.toDomain()
-            }
-            Result.success(products)
-        } catch (e: Throwable) {
-            val appError = mapToAppError(e)
-            Result.failure(appError)
+        // 1. إرسال بيانات Room المحلية أولاً
+        val localFlow = productDao.getAllProducts().map { entities ->
+            Result.success(entities.toDomainFromEntity())
         }
-        emit(result)
+
+        // 2. التحديث من الشبكة إذا انتهت صلاحية الكاش
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastSyncTimestamp > cacheTimeoutMillis) {
+            try {
+                val remoteProducts = retryWithBackoff(maxRetries = 3, initialDelayMs = 1000L) {
+                    val response = api.getProducts()
+                    response.products.toDomain()
+                }
+                productDao.insertProducts(remoteProducts.toEntityList())
+                lastSyncTimestamp = currentTime
+            } catch (e: Throwable) {
+                val appError = mapToAppError(e)
+                emit(Result.failure(appError))
+            }
+        }
+
+        // 3. التحديث المستمر من قاعدة البيانات
+        emitAll(localFlow)
     }.flowOn(ioDispatcher)
 
     override suspend fun getProductById(id: Long): Result<Product> = withContext(ioDispatcher) {
@@ -66,9 +88,6 @@ class ProductRepositoryImpl @Inject constructor(
         ).flow.flowOn(ioDispatcher)
     }
 
-    /**
-     * تحويل الأخطاء الفنية إلى كائنات AppError مخصصة (4xx, 5xx, Timeouts, No Internet)
-     */
     private fun mapToAppError(throwable: Throwable): AppError {
         return when (throwable) {
             is AppError -> throwable
