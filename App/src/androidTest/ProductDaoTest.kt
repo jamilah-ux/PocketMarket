@@ -6,7 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.pocketmarket.data.local.dao.ProductDao
 import com.example.pocketmarket.data.local.entity.ProductEntity
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -33,8 +33,9 @@ class ProductDaoTest {
         database.close()
     }
 
+    @Suppress("FunctionName")
     @Test
-    fun insertAndGetAllProducts_returnsInsertedData() = runBlocking {
+    fun insertAndGetAllProducts_returnsInsertedData() = runTest {
         val sampleEntity = ProductEntity(
             id = 1L,
             title = "Test Product",
@@ -43,14 +44,14 @@ class ProductDaoTest {
             discountPercentage = 10.0,
             rating = 4.5,
             stock = 5,
-            category = "electronics",
-            thumbnail = "http://test.com/img.jpg",
-            images = listOf("http://test.com/img.jpg")
+            category = "test",
+            thumbnail = "",
+            images = emptyList()
         )
 
-        dao.insertProducts(listOf(sampleEntity))
+        dao.insertAll(listOf(sampleEntity))
+        val products: List<ProductEntity> = dao.getAllProducts().first()
 
-        val products = dao.getAllProducts().first()
         assertEquals(1, products.size)
         assertEquals("Test Product", products[0].title)
     }

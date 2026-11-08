@@ -1,19 +1,16 @@
-package com.example.pocketmarket.domain
+package com.example.pocketmarket.data.repository
 
 import com.example.pocketmarket.domain.repository.CatalogRepository
 import com.example.pocketmarket.domain.util.AppResult
 import com.example.pocketmarket.domain.util.CoroutineDispatchers
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -44,8 +41,8 @@ class CatalogRepositoryTest {
 
         val totalTime = currentTime - startTime
 
-        assertTrue(result is AppResult.Success)
-        assertEquals(2000L, totalTime) // 1000ms + 1000ms = 2000ms
+        Assert.assertTrue(result is AppResult.Success)
+        Assert.assertEquals(2000L, totalTime) // 1000ms + 1000ms = 2000ms
     }
 
     @Test
@@ -57,8 +54,8 @@ class CatalogRepositoryTest {
 
         val totalTime = currentTime - startTime
 
-        assertTrue(result is AppResult.Success)
-        assertEquals(1000L, totalTime) // Parallel: executed at the same time
+        Assert.assertTrue(result is AppResult.Success)
+        Assert.assertEquals(1000L, totalTime) // Parallel: executed at the same time
     }
 
     @Test
@@ -68,8 +65,11 @@ class CatalogRepositoryTest {
             simulateProductFailure = true
         )
 
-        assertTrue(result is AppResult.Error)
-        assertEquals("Failed to load products from server.", (result as AppResult.Error).message)
+        Assert.assertTrue(result is AppResult.Error)
+        Assert.assertEquals(
+            "Failed to load products from server.",
+            (result as AppResult.Error).message
+        )
     }
 
     @Test
@@ -83,7 +83,7 @@ class CatalogRepositoryTest {
         testScheduler.advanceTimeBy(1000L) // تقدم الوقت جزئياً
         job.cancelAndJoin() // إلغاء العملية أثناء الانتظار
 
-        assertTrue(job.isCancelled)
-        assertTrue(!completed) // التأكد أن الكود توقف ولم يكمل
+        Assert.assertTrue(job.isCancelled)
+        Assert.assertTrue(!completed) // التأكد أن الكود توقف ولم يكمل
     }
 }
