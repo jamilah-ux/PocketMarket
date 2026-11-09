@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -42,6 +44,7 @@ import com.example.pocketmarket.domain.model.Product
 import com.example.pocketmarket.ui.components.ExpandableProductDescription
 import com.example.pocketmarket.ui.components.PocketButton
 import com.example.pocketmarket.ui.components.QuantitySelector
+import com.example.pocketmarket.ui.util.NotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +55,8 @@ fun ProductDetailScreen(
     onAddToCart: (Product, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     // الاحتفاظ بالكمية حتى عند تدوير الشاشة
     var selectedQuantity by rememberSaveable { mutableIntStateOf(1) }
     val isAvailable = product.stock > 0
@@ -77,6 +82,22 @@ fun ProductDetailScreen(
                     }
                 },
                 actions = {
+                    // زر مشاركة تفاصيل المنتج عبر System Sharesheet (Task 24)
+                    IconButton(
+                        onClick = {
+                            NotificationHelper.shareProduct(
+                                context = context,
+                                productTitle = product.title,
+                                productPrice = product.discountedPrice
+                            )
+                        },
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share Product"
+                        )
+                    }
                     IconButton(
                         onClick = onNavigateToCart,
                         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
