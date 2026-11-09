@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -15,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.pocketmarket.R
 
 @Composable
 fun QuantitySelector(
@@ -35,9 +36,13 @@ fun QuantitySelector(
     ) {
         IconButton(
             onClick = { if (quantity > 1) onQuantityChange(quantity - 1) },
-            enabled = quantity > 1
+            enabled = quantity > 1,
+            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
         ) {
-            Text(text = "−", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = "−",
+                style = MaterialTheme.typography.titleLarge
+            )
         }
 
         Text(
@@ -48,9 +53,13 @@ fun QuantitySelector(
 
         IconButton(
             onClick = { if (quantity < maxStock) onQuantityChange(quantity + 1) },
-            enabled = quantity < maxStock
+            enabled = quantity < maxStock,
+            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Increase quantity")
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(R.string.detail_title)
+            )
         }
     }
 }
