@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">بوكيت ماركت</string>
+    <string name="cart_title">سلة التسوق</string>
+    <string name="cart_total">المجموع الإجمالي</string>
+    <string name="cart_checkout">إتمام الطلب</string>
+    <string name="cart_empty_title">السلة فارغة</string>
+    <string name="cart_empty_desc">لم تقم بإضافة أي منتجات إلى سلتك بعد.</string>
+    <string name="cart_remove">حذف المنتج من السلة</string>
+    <string name="detail_title">تفاصيل المنتج</string>
+    <string name="detail_add_to_cart">إضافة إلى السلة</string>
+    <string name="detail_stock_available">المتوفر في المخزون: %1$d</string>
+    <string name="detail_out_of_stock">غير متوفر حالياً</string>
+    <string name="detail_description_title">عن المنتج</string>
+</resources>
