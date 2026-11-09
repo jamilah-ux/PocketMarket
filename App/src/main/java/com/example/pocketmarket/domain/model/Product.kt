@@ -1,5 +1,8 @@
 package com.example.pocketmarket.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class Product(
     val id: Long,
     val title: String,
@@ -21,7 +24,7 @@ data class Product(
 
     val discountedPrice: Double
         get() = if (discountPercentage > 0) {
-            price * (1 - (discountPercentage / 100))
+            price * (1.0 - (discountPercentage / 100.0))
         } else {
             price
         }

@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -99,6 +97,17 @@ fun HomeScreen(
                 is HomeUiState.Content -> {
                     var searchQuery by remember { mutableStateOf("") }
 
+                    // 🟢 تحسين الأداء: تذكر قائمة الفلترة لمنع إعادة الحسابات المتكررة عند Scroll
+                    val filteredProducts = remember(searchQuery, uiState.products) {
+                        if (searchQuery.isBlank()) {
+                            uiState.products
+                        } else {
+                            uiState.products.filter {
+                                it.title.contains(searchQuery, ignoreCase = true)
+                            }
+                        }
+                    }
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
@@ -130,7 +139,11 @@ fun HomeScreen(
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    items(uiState.categories) { category ->
+                                    // 🟢 تحسين الأداء: إضافة key للتصنيفات
+                                    items(
+                                        items = uiState.categories,
+                                        key = { category -> category }
+                                    ) { category ->
                                         PocketChip(
                                             selected = category == uiState.selectedCategory,
                                             onClick = { onCategorySelected(category) },
@@ -151,15 +164,11 @@ fun HomeScreen(
                         }
 
                         // 5. Products List
-                        val filteredProducts = if (searchQuery.isBlank()) {
-                            uiState.products
-                        } else {
-                            uiState.products.filter {
-                                it.title.contains(searchQuery, ignoreCase = true)
-                            }
-                        }
-
-                        items(filteredProducts, key = { it.id }) { product ->
+                        // 🟢 تحسين الأداء: ربط المفتاح بـ id المنتج لمنع إعادة رسم العناصر عند Scroll
+                        items(
+                            items = filteredProducts,
+                            key = { product -> product.id }
+                        ) { product ->
                             PocketProductCard(
                                 product = product,
                                 onAddToCartClick = { onAddToCartClick(product) }
@@ -172,7 +181,7 @@ fun HomeScreen(
     }
 }
 
-// --- Previews (Meeting Acceptance Criteria: Content, Loading, Empty & Dark Mode) ---
+// --- Previews ---
 
 private val sampleCategories = listOf("All", "Smartphones", "Laptops", "Fragrances", "Skincare")
 
