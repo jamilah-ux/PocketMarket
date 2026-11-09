@@ -3,6 +3,7 @@ package com.example.pocketmarket.di
 import android.content.Context
 import androidx.room.Room
 import com.example.pocketmarket.data.local.PocketMarketDatabase
+import com.example.pocketmarket.data.local.dao.CartDao
 import com.example.pocketmarket.data.local.dao.ProductDao
 import dagger.Module
 import dagger.Provides
@@ -24,11 +25,16 @@ object DatabaseModule {
             context,
             PocketMarketDatabase::class.java,
             "pocketmarket.db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
     fun provideProductDao(db: PocketMarketDatabase): ProductDao {
         return db.productDao
+    }
+
+    @Provides
+    fun provideCartDao(db: PocketMarketDatabase): CartDao {
+        return db.cartDao()
     }
 }

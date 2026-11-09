@@ -10,10 +10,6 @@ class Converters {
 
     @TypeConverter
     fun toStringList(value: String?): List<String> {
-        return if (value.isNullOrEmpty()) {
-            emptyList()
-        } else {
-            value.split(",")
-        }
+        return if (value.isNullOrEmpty()) emptyList() else value.split(",")
     }
 }
