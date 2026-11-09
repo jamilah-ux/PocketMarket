@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.pocketmarket.R
 import com.example.pocketmarket.domain.model.Product
+import com.example.pocketmarket.ui.components.ExpandableProductDescription
 import com.example.pocketmarket.ui.components.PocketButton
 import com.example.pocketmarket.ui.components.QuantitySelector
 
@@ -161,16 +162,9 @@ fun ProductDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = stringResource(R.string.detail_description_title),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = product.description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            // استخدام المكون الحركي التفاعلي للوصف
+            ExpandableProductDescription(
+                description = product.description
             )
 
             Spacer(modifier = Modifier.height(32.dp))

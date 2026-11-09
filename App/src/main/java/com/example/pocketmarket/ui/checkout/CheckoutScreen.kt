@@ -1,4 +1,8 @@
 package com.example.pocketmarket.ui.checkout
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -16,6 +21,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.pocketmarket.ui.components.OrderProgressRing
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,8 +52,16 @@ fun CheckoutScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // مؤشر تقدم محاكاة مراحل الطلب عبر Canvas
+            OrderProgressRing(
+                progress = if (uiState.isLoading) 0.5f else 1.0f,
+                size = 100.dp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
             // Full Name Input
             OutlinedTextField(
                 value = uiState.fullName,
@@ -159,9 +173,15 @@ fun CheckoutScreen(
                 }
             }
 
-            // General Error Banner
-            uiState.generalError?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error)
+            // General Error Banner مع أنيميشن ظهوره
+            AnimatedVisibility(
+                visible = uiState.generalError != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                uiState.generalError?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.error)
+                }
             }
 
             // Submit Button
