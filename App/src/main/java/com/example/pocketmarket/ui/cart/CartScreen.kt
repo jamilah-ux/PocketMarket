@@ -1,5 +1,12 @@
 package com.example.pocketmarket.ui.cart
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,7 +24,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -47,6 +54,12 @@ fun CartScreen(
     modifier: Modifier = Modifier
 ) {
     val totalAmount = items.sumOf { it.totalPrice }
+
+    val animatedTotal by animateFloatAsState(
+        targetValue = totalAmount.toFloat(),
+        animationSpec = tween(durationMillis = 300),
+        label = "CartTotalAnimation"
+    )
 
     Scaffold(
         topBar = {
@@ -75,7 +88,7 @@ fun CartScreen(
                             style = MaterialTheme.typography.titleMedium
                         )
                         Text(
-                            text = String.format("$%.2f", totalAmount),
+                            text = String.format("$%.2f", animatedTotal),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
@@ -104,12 +117,22 @@ fun CartScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(items, key = { it.product.id }) { item ->
-                    CartItemCard(
-                        item = item,
-                        onQuantityChange = { qty -> onQuantityChange(item, qty) },
-                        onRemove = { onRemoveItem(item) }
-                    )
+                items(
+                    items = items,
+                    key = { it.product.id }
+                ) { item ->
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically(),
+                        modifier = Modifier.animateItem()
+                    ) {
+                        CartItemCard(
+                            item = item,
+                            onQuantityChange = { qty -> onQuantityChange(item, qty) },
+                            onRemove = { onRemoveItem(item) }
+                        )
+                    }
                 }
             }
         }
