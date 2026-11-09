@@ -26,6 +26,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.example.pocketmarket.fixtures.MockProducts
 import com.example.pocketmarket.ui.cart.CartAction
 import com.example.pocketmarket.ui.cart.CartScreen
 import com.example.pocketmarket.ui.cart.CartViewModel
@@ -91,7 +92,7 @@ fun AppNavGraph(
             startDestination = ScreenRoute.Catalog.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 1. شاشة الكتالوج مع تمرير pagedProducts و onRefresh
+            // 1. شاشة الكتالوج الأساسية والتفاعلية بكل الميزات (العمود/العمودين، التصنيفات، والتفاعل)
             composable(route = ScreenRoute.Catalog.route) {
                 CatalogScreen(
                     state = catalogState,
@@ -101,13 +102,14 @@ fun AppNavGraph(
                     onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },
                     onToggleLayoutMode = { catalogViewModel.onAction(CatalogAction.ToggleLayout) },
                     onAddToCart = { product ->
-                        navController.navigate(ScreenRoute.Detail.createRoute(product.id))
+                        cartViewModel.onAction(CartAction.AddProduct(product, 1))
+                        navController.navigate(ScreenRoute.Cart.route)
                     },
                     onRefresh = { catalogViewModel.onAction(CatalogAction.Refresh) }
                 )
             }
 
-            // 2. شاشة تفاصيل المنتج مع دعم الـ Deep Link
+            // 2. شاشة تفاصيل المنتج
             composable(
                 route = ScreenRoute.Detail.route,
                 arguments = listOf(navArgument("productId") { type = NavType.LongType }),
@@ -120,6 +122,7 @@ fun AppNavGraph(
             ) { backStackEntry ->
                 val productId = backStackEntry.arguments?.getLong("productId")
                 val product = catalogState.products.find { it.id == productId }
+                    ?: MockProducts.items.find { it.id == productId }
 
                 if (product != null) {
                     ProductDetailScreen(
