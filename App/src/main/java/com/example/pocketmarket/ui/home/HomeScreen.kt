@@ -58,9 +58,13 @@ sealed interface HomeUiState {
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    cartItemsMap: Map<Long, Int> = emptyMap(),
     onCategorySelected: (String) -> Unit = {},
     onProductClick: (Product) -> Unit = {},
-    onAddToCartClick: (Product) -> Unit = {}
+    onAddToCartClick: (Product) -> Unit = {},
+    onIncreaseQuantity: (Product) -> Unit = {},
+    onDecreaseQuantity: (Product) -> Unit = {},
+    onCartClick: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -72,7 +76,7 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { /* Navigate to cart in future tasks */ }) {
+                    IconButton(onClick = onCartClick) {
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
                             contentDescription = "Cart",
@@ -97,7 +101,6 @@ fun HomeScreen(
                 is HomeUiState.Content -> {
                     var searchQuery by remember { mutableStateOf("") }
 
-                    // 🟢 تحسين الأداء: تذكر قائمة الفلترة لمنع إعادة الحسابات المتكررة عند Scroll
                     val filteredProducts = remember(searchQuery, uiState.products) {
                         if (searchQuery.isBlank()) {
                             uiState.products
@@ -122,7 +125,7 @@ fun HomeScreen(
                             )
                         }
 
-                        // 2. Featured Promotional Banner
+                        // 2. Featured Banner
                         item {
                             FeaturedBanner()
                         }
@@ -139,7 +142,6 @@ fun HomeScreen(
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    // 🟢 تحسين الأداء: إضافة key للتصنيفات
                                     items(
                                         items = uiState.categories,
                                         key = { category -> category }
@@ -154,7 +156,7 @@ fun HomeScreen(
                             }
                         }
 
-                        // 4. Featured Products Section Title
+                        // 4. Section Title
                         item {
                             Text(
                                 text = stringResource(R.string.home_featured_title),
@@ -164,13 +166,17 @@ fun HomeScreen(
                         }
 
                         // 5. Products List
-                        // 🟢 تحسين الأداء: ربط المفتاح بـ id المنتج لمنع إعادة رسم العناصر عند Scroll
                         items(
                             items = filteredProducts,
                             key = { product -> product.id }
                         ) { product ->
+                            val quantityInCart = cartItemsMap[product.id] ?: 0
                             PocketProductCard(
                                 product = product,
+                                quantityInCart = quantityInCart,
+                                onProductClick = { onProductClick(product) },
+                                onIncreaseQuantity = { onIncreaseQuantity(product) },
+                                onDecreaseQuantity = { onDecreaseQuantity(product) },
                                 onAddToCartClick = { onAddToCartClick(product) }
                             )
                         }

@@ -1,5 +1,6 @@
 package com.example.pocketmarket.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,14 +17,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.pocketmarket.domain.model.Product
+import java.util.Locale
 
 @Composable
 fun PocketGridProductCard(
     product: Product,
+    quantityInCart: Int = 0,
+    onProductClick: () -> Unit,
+    onIncreaseQuantity: () -> Unit,
+    onDecreaseQuantity: () -> Unit,
     onAddToCartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    PocketCard(modifier = modifier) {
+    val formattedPrice = String.format(Locale.US, "%.2f", product.discountedPrice)
+
+    PocketCard(
+        modifier = modifier.clickable { onProductClick() }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -48,16 +58,19 @@ fun PocketGridProductCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$${product.discountedPrice}",
+                text = "$$formattedPrice",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            PocketButton(
-                text = "Add",
-                onClick = onAddToCartClick,
-                modifier = Modifier.height(36.dp)
+
+            // استبدال الزر بالمكون التفاعلي الجديد
+            PocketAddToCartButton(
+                quantityInCart = quantityInCart,
+                onIncrease = onIncreaseQuantity,
+                onDecrease = onDecreaseQuantity,
+                onAddToCart = onAddToCartClick
             )
         }
     }

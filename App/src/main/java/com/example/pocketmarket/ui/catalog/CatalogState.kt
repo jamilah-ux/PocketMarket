@@ -15,6 +15,7 @@ enum class ViewLayoutMode {
 
 data class CatalogUiState(
     val isLoading: Boolean = false,
+    val allProducts: List<Product> = emptyList(), // تم إضافة هذه الخاصية
     val products: List<Product> = emptyList(),
     val categories: List<String> = emptyList(),
     val searchQuery: String = "",
@@ -22,5 +23,4 @@ data class CatalogUiState(
     val sortOption: SortOption = SortOption.NAME_ASC,
     val layoutMode: ViewLayoutMode = ViewLayoutMode.GRID,
     val errorMessage: String? = null
-
 )

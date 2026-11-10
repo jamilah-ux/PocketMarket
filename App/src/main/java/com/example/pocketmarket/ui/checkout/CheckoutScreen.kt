@@ -1,213 +1,215 @@
 package com.example.pocketmarket.ui.checkout
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.pocketmarket.ui.components.OrderProgressRing
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.pocketmarket.domain.model.CartItem
+import com.example.pocketmarket.ui.components.PocketButton
+import com.example.pocketmarket.ui.components.PocketTextField
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
-    viewModel: CheckoutViewModel,
-    onCheckoutSuccess: () -> Unit
+    cartItems: List<CartItem>,
+    onBackClick: () -> Unit,
+    onConfirmOrder: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val focusManager = LocalFocusManager.current
+    var address by remember { mutableStateOf("الرياض - حي الروضة") }
+    var selectedPaymentMethod by remember { mutableStateOf("Mada / Credit Card") }
 
-    val fullNameFocus = remember { FocusRequester() }
-    val addressFocus = remember { FocusRequester() }
-    val phoneFocus = remember { FocusRequester() }
+    val subtotal = cartItems.sumOf { it.product.discountedPrice * it.quantity }
+    val shipping = if (subtotal > 0) 15.0 else 0.0
+    val total = subtotal + shipping
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    val deliveryOptions = listOf("Standard Delivery", "Express Delivery", "Same Day Pickup")
+    val formattedSubtotal = String.format(Locale.US, "%.2f", subtotal)
+    val formattedShipping = String.format(Locale.US, "%.2f", shipping)
+    val formattedTotal = String.format(Locale.US, "%.2f", total)
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Checkout (Simulation)") }) }
-    ) { innerPadding ->
+        topBar = {
+            TopAppBar(
+                title = { Text("إتمام الطلب") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // مؤشر تقدم محاكاة مراحل الطلب عبر Canvas
-            OrderProgressRing(
-                progress = if (uiState.isLoading) 0.5f else 1.0f,
-                size = 100.dp,
-                modifier = Modifier.padding(vertical = 8.dp)
+            // 1. عنوان التوصيل
+            Text(
+                text = "عنوان التوصيل",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            PocketTextField(
+                value = address,
+                onValueChange = { address = it },
+                label = "عنوان الشحن",
+                modifier = Modifier.fillMaxWidth()
             )
 
-            // Full Name Input
-            OutlinedTextField(
-                value = uiState.fullName,
-                onValueChange = viewModel::onFullNameChanged,
-                label = { Text("Full Name") },
-                isError = uiState.fullNameError != null,
-                supportingText = { uiState.fullNameError?.let { Text(it) } },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { addressFocus.requestFocus() }),
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 2. طريقة الدفع
+            Text(
+                text = "طريقة الدفع",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(fullNameFocus)
-            )
-
-            // Address Input
-            OutlinedTextField(
-                value = uiState.address,
-                onValueChange = viewModel::onAddressChanged,
-                label = { Text("Shipping Address") },
-                isError = uiState.addressError != null,
-                supportingText = { uiState.addressError?.let { Text(it) } },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { phoneFocus.requestFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(addressFocus)
-            )
-
-            // Phone Number Input
-            OutlinedTextField(
-                value = uiState.phoneNumber,
-                onValueChange = viewModel::onPhoneNumberChanged,
-                label = { Text("Phone Number") },
-                isError = uiState.phoneNumberError != null,
-                supportingText = { uiState.phoneNumberError?.let { Text(it) } },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(phoneFocus)
-            )
-
-            // Dropdown Menu: Delivery Method
-            ExposedDropdownMenuBox(
-                expanded = uiState.isDropdownExpanded,
-                onExpandedChange = viewModel::onDropdownExpandedChanged
+                    .clickable { selectedPaymentMethod = "Mada / Credit Card" },
+                shape = RoundedCornerShape(12.dp)
             ) {
-                OutlinedTextField(
-                    value = uiState.deliveryMethod,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Delivery Option") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.isDropdownExpanded) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = uiState.isDropdownExpanded,
-                    onDismissRequest = { viewModel.onDropdownExpandedChanged(false) }
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    deliveryOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = { viewModel.onDeliveryMethodSelected(option) }
+                    RadioButton(
+                        selected = selectedPaymentMethod == "Mada / Credit Card",
+                        onClick = { selectedPaymentMethod = "Mada / Credit Card" }
+                    )
+                    Icon(Icons.Default.CreditCard, contentDescription = null)
+                    Text(
+                        text = "بطاقة مدى / ائتمانية",
+                        modifier = Modifier.padding(start = 12.dp),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { selectedPaymentMethod = "Cash on Delivery" },
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedPaymentMethod == "Cash on Delivery",
+                        onClick = { selectedPaymentMethod = "Cash on Delivery" }
+                    )
+                    Icon(Icons.Default.LocalShipping, contentDescription = null)
+                    Text(
+                        text = "الدفع عند الاستلام",
+                        modifier = Modifier.padding(start = 12.dp),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 3. ملخص الحساب
+            Text(
+                text = "ملخص التكلفة",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                    ) {
+                        Text("مجموع المنتجات:")
+                        Text("$$formattedSubtotal")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                    ) {
+                        Text("رسوم التوصيل:")
+                        Text("$$formattedShipping")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                    ) {
+                        Text("المجموع النهائي:", fontWeight = FontWeight.Bold)
+                        Text(
+                            "$$formattedTotal",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
 
-            // Date Picker Field
-            val formattedDate = uiState.deliveryDateMillis?.let {
-                SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault()).format(Date(it))
-            } ?: ""
+            Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedTextField(
-                value = formattedDate,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Preferred Delivery Date") },
-                isError = uiState.deliveryDateError != null,
-                supportingText = { uiState.deliveryDateError?.let { Text(it) } },
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Select Date")
-                    }
-                },
+            // 4. زر التأكيد
+            PocketButton(
+                text = "تأكيد وإرسال الطلب",
+                onClick = onConfirmOrder,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showDatePicker = true }
+                    .height(50.dp)
             )
-
-            if (showDatePicker) {
-                DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.onDeliveryDateSelected(datePickerState.selectedDateMillis)
-                            showDatePicker = false
-                        }) {
-                            Text("OK")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-                    }
-                ) {
-                    DatePicker(state = datePickerState)
-                }
-            }
-
-            // General Error Banner مع أنيميشن ظهوره
-            AnimatedVisibility(
-                visible = uiState.generalError != null,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                uiState.generalError?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error)
-                }
-            }
-
-            // Submit Button
-            Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    if (!viewModel.validateForm()) {
-                        // Advanced UX: Focus on the first field containing error
-                        when {
-                            uiState.fullNameError != null -> fullNameFocus.requestFocus()
-                            uiState.addressError != null -> addressFocus.requestFocus()
-                            uiState.phoneNumberError != null -> phoneFocus.requestFocus()
-                        }
-                    } else {
-                        viewModel.submitCheckout(onCheckoutSuccess)
-                    }
-                },
-                enabled = !uiState.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                } else {
-                    Text("Place Demo Order")
-                }
-            }
         }
     }
 }

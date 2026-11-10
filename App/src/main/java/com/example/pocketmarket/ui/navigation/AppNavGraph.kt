@@ -33,9 +33,12 @@ import com.example.pocketmarket.ui.cart.CartViewModel
 import com.example.pocketmarket.ui.catalog.CatalogAction
 import com.example.pocketmarket.ui.catalog.CatalogScreen
 import com.example.pocketmarket.ui.catalog.CatalogViewModel
+import com.example.pocketmarket.ui.checkout.CheckoutScreen
+import com.example.pocketmarket.ui.checkout.OrderSuccessScreen
 import com.example.pocketmarket.ui.common.UiEffect
 import com.example.pocketmarket.ui.components.PocketEmptyState
 import com.example.pocketmarket.ui.detail.ProductDetailScreen
+import com.example.pocketmarket.ui.profile.ProfileScreen
 import com.example.pocketmarket.ui.settings.SettingsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +53,9 @@ fun AppNavGraph(
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // الاستماع لتأثيرات السلة
+    val totalCartCount = cartState.items.sumOf { it.quantity }
+    val cartItemsMap = cartState.items.associate { it.product.id to it.quantity }
+
     LaunchedEffect(Unit) {
         cartViewModel.effect.collect { effect ->
             when (effect) {
@@ -65,7 +70,6 @@ fun AppNavGraph(
         }
     }
 
-    // الاستماع لتأثيرات الكتالوج
     LaunchedEffect(Unit) {
         catalogViewModel.effect.collect { effect ->
             when (effect) {
@@ -92,18 +96,46 @@ fun AppNavGraph(
             startDestination = ScreenRoute.Catalog.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 1. شاشة الكتالوج الأساسية والتفاعلية بكل الميزات (العمود/العمودين، التصنيفات، والتفاعل)
+            // 1. شاشة الكتالوج
             composable(route = ScreenRoute.Catalog.route) {
                 CatalogScreen(
                     state = catalogState,
                     pagedProducts = catalogViewModel.pagedProducts,
+                    cartItemsMap = cartItemsMap,
+                    cartItemCount = totalCartCount,
                     onSearchChange = { catalogViewModel.onAction(CatalogAction.UpdateSearch(it)) },
                     onCategorySelect = { catalogViewModel.onAction(CatalogAction.SelectCategory(it)) },
                     onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },
                     onToggleLayoutMode = { catalogViewModel.onAction(CatalogAction.ToggleLayout) },
+                    onProductClick = { product ->
+                        navController.navigate(ScreenRoute.Detail.createRoute(product.id))
+                    },
                     onAddToCart = { product ->
                         cartViewModel.onAction(CartAction.AddProduct(product, 1))
+                    },
+                    onIncreaseQuantity = { product ->
+                        val currentItem = cartState.items.find { it.product.id == product.id }
+                        if (currentItem != null) {
+                            cartViewModel.onAction(CartAction.UpdateQuantity(currentItem, currentItem.quantity + 1))
+                        } else {
+                            cartViewModel.onAction(CartAction.AddProduct(product, 1))
+                        }
+                    },
+                    onDecreaseQuantity = { product ->
+                        val currentItem = cartState.items.find { it.product.id == product.id }
+                        if (currentItem != null) {
+                            if (currentItem.quantity > 1) {
+                                cartViewModel.onAction(CartAction.UpdateQuantity(currentItem, currentItem.quantity - 1))
+                            } else {
+                                cartViewModel.onAction(CartAction.RemoveItem(currentItem))
+                            }
+                        }
+                    },
+                    onCartClick = {
                         navController.navigate(ScreenRoute.Cart.route)
+                    },
+                    onProfileClick = {
+                        navController.navigate("profile")
                     },
                     onRefresh = { catalogViewModel.onAction(CatalogAction.Refresh) }
                 )
@@ -160,7 +192,7 @@ fun AppNavGraph(
                 }
             }
 
-            // 3. شاشة السلة
+            // 3. شاشة سلة التسوق
             composable(route = ScreenRoute.Cart.route) {
                 CartScreen(
                     items = cartState.items,
@@ -172,12 +204,42 @@ fun AppNavGraph(
                         cartViewModel.onAction(CartAction.RemoveItem(item))
                     },
                     onCheckoutClick = {
-                        cartViewModel.onAction(CartAction.Checkout)
+                        navController.navigate("checkout")
                     }
                 )
             }
 
-            // 4. شاشة الإعدادات
+            // 4. شاشة إتمام الطلب (Checkout)
+            composable(route = "checkout") {
+                CheckoutScreen(
+                    cartItems = cartState.items,
+                    onBackClick = { navController.popBackStack() },
+                    onConfirmOrder = {
+                        cartViewModel.onAction(CartAction.Checkout)
+                        navController.navigate("order_success") {
+                            popUpTo(ScreenRoute.Catalog.route) { inclusive = false }
+                        }
+                    }
+                )
+            }
+
+            // 5. شاشة نجاح الطلب (Order Success)
+            composable(route = "order_success") {
+                OrderSuccessScreen(
+                    onContinueShopping = {
+                        navController.popBackStack(ScreenRoute.Catalog.route, false)
+                    }
+                )
+            }
+
+            // 6. شاشة البروفايل والطلبيات (Profile & Orders)
+            composable(route = "profile") {
+                ProfileScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // 7. شاشة الإعدادات
             composable(route = ScreenRoute.Settings.route) {
                 SettingsScreen(onBackClick = { navController.popBackStack() })
             }

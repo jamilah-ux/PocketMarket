@@ -1,37 +1,42 @@
-
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-<string name="app_name">PocketMarket</string>
-<string name="common_retry">إعادة المحاولة</string>
-<string name="common_loading">جاري التحميل...</string>
-<string name="common_empty_title">لا توجد عناصر</string>
-<string name="common_empty_description">لم نتمكن من العثور على أي عناصر لعرضها حالياً.</string>
-<string name="common_error_title">حدث خطأ ما</string>
-<string name="common_error_default">يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</string>
-<string name="home_title">PocketMarket</string>
-<string name="home_search_hint">ابحث عن المنتجات...</string>
-<string name="home_banner_title">عروض الموسم الحصرية</string>
-<string name="home_banner_subtitle">خصومات تصل إلى 40% على الإلكترونيات</string>
-<string name="home_categories_title">التصنيفات</string>
-<string name="home_featured_title">منتجات مميزة</string>
-<string name="category_all">الكل</string>
-<string name="catalog_title">قائمة المنتجات</string>
-<string name="catalog_search_hint">ابحث بالاسم أو الوصف...</string>
-<string name="catalog_sort_label">ترتيب حسب</string>
-<string name="catalog_sort_name_asc">الاسم (أ - ي)</string>
-<string name="catalog_sort_price_low">السعر: من الأقل للأعلى</string>
-<string name="catalog_sort_price_high">السعر: من الأعلى للأقل</string>
-<string name="catalog_no_results_title">لم نجد أي نتائج</string>
-<string name="catalog_no_results_desc">جرّب استخدام كلمات بحث أخرى أو إزالة الفلاتر.</string>
-    <string name="detail_title">تفاصيل المنتج</string>
-    <string name="detail_stock_available">المتوفر في المخزون: %1$d</string>
-    <string name="detail_out_of_stock">نفدت الكمية</string>
-    <string name="detail_add_to_cart">إضافة إلى السلة</string>
-    <string name="detail_description_title">الوصف</string>
-    <string name="cart_title">سلة المشتريات</string>
-    <string name="cart_empty_title">سلتك فارغة حالياً</string>
-    <string name="cart_empty_desc">تصفح المنتجات وأضف ما يعجبك للمتابعة.</string>
-    <string name="cart_subtotal">المجموع الفرعي</string>
-    <string name="cart_total">الإجمالي النهائي</string>
-    <string name="cart_checkout">متابعة الشراء</string>
-    <string name="cart_remove">حذف</string>
+    <string name="app_name">PocketMarket</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_loading">Loading...</string>
+    <string name="common_empty_title">No items found</string>
+    <string name="common_empty_description">We couldn\'t find any items to display right now.</string>
+    <string name="common_error_title">Something went wrong</string>
+    <string name="common_error_default">Please check your internet connection and try again.</string>
+
+    <string name="home_title">PocketMarket</string>
+    <string name="home_search_hint">Search products...</string>
+    <string name="home_banner_title">Exclusive Seasonal Offers</string>
+    <string name="home_banner_subtitle">Up to 40% off on electronics</string>
+    <string name="home_categories_title">Categories</string>
+    <string name="home_featured_title">Featured Products</string>
+    <string name="category_all">All</string>
+
+    <string name="catalog_title">Product Catalog</string>
+    <string name="catalog_search_hint">Search by name or description...</string>
+    <string name="catalog_sort_label">Sort by</string>
+    <string name="catalog_sort_name_asc">A-Z</string>
+    <string name="catalog_sort_price_low">Price: Min</string>
+    <string name="catalog_sort_price_high">Price: Max</string>
+    <string name="catalog_no_results_title">No results found</string>
+    <string name="catalog_no_results_desc">Try using different search terms or removing filters.</string>
+
+    <string name="detail_title">Product Details</string>
+    <string name="detail_stock_available">Available in stock: %1$d</string>
+    <string name="detail_out_of_stock">Out of stock</string>
+    <string name="detail_add_to_cart">Add to Cart</string>
+    <string name="detail_description_title">Description</string>
+
+    <string name="cart_title">Shopping Cart</string>
+    <string name="cart_empty_title">Your cart is empty</string>
+    <string name="cart_empty_desc">Browse products and add items to continue.</string>
+    <string name="cart_subtotal">Subtotal</string>
+    <string name="cart_total">Total</string>
+    <string name="cart_checkout">Checkout</string>
+    <string name="cart_remove">Remove</string>
+    <string name="product_add_to_cart">Add</string>
 </resources>

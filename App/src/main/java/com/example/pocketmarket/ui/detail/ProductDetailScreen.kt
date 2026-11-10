@@ -1,8 +1,5 @@
 package com.example.pocketmarket.ui.detail
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,41 +7,41 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.pocketmarket.R
 import com.example.pocketmarket.domain.model.Product
-import com.example.pocketmarket.ui.components.ExpandableProductDescription
 import com.example.pocketmarket.ui.components.PocketButton
-import com.example.pocketmarket.ui.components.QuantitySelector
-import com.example.pocketmarket.ui.util.NotificationHelper
+import com.example.pocketmarket.ui.components.PocketProductImage
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,160 +52,151 @@ fun ProductDetailScreen(
     onAddToCart: (Product, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
-    // الاحتفاظ بالكمية حتى عند تدوير الشاشة
-    var selectedQuantity by rememberSaveable { mutableIntStateOf(1) }
-    val isAvailable = product.stock > 0
+    var quantity by remember { mutableIntStateOf(1) }
+    val formattedPrice = String.format(Locale.US, "%.2f", product.discountedPrice)
+    val imageUrl = product.images.firstOrNull() ?: product.thumbnail
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.detail_title),
-                        modifier = Modifier.semantics { heading() }
-                    )
-                },
+                title = { Text(stringResource(R.string.detail_title)) },
                 navigationIcon = {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    ) {
+                    IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.detail_title)
+                            contentDescription = "Back"
                         )
                     }
                 },
                 actions = {
-                    // زر مشاركة تفاصيل المنتج عبر System Sharesheet (Task 24)
-                    IconButton(
-                        onClick = {
-                            NotificationHelper.shareProduct(
-                                context = context,
-                                productTitle = product.title,
-                                productPrice = product.discountedPrice
-                            )
-                        },
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    ) {
+                    IconButton(onClick = { /* مشاركة المنتج */ }) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share Product"
+                            contentDescription = "Share"
                         )
                     }
-                    IconButton(
-                        onClick = onNavigateToCart,
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    ) {
+                    IconButton(onClick = onNavigateToCart) {
                         Icon(
                             imageVector = Icons.Default.ShoppingCart,
-                            contentDescription = stringResource(R.string.cart_title)
+                            contentDescription = "Cart"
                         )
                     }
                 }
             )
-        },
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                PocketButton(
-                    text = stringResource(R.string.detail_add_to_cart),
-                    onClick = { onAddToCart(product, selectedQuantity) },
-                    enabled = isAvailable,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
         }
-    ) { padding ->
+    ) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // صورة أو معرض رمزي للمنتج
-            Box(
+            // 1. الصورة الحقيقية للمنتج باستخدام PocketProductImage
+            PocketProductImage(
+                imageUrl = imageUrl,
+                contentDescription = product.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = product.title.take(15),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+                    .height(280.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = product.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+            // 2. عنوان المنتج والسعر المنسق
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = product.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "المتوفر في المخزون: ${product.stock}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Text(
-                    text = "$${product.discountedPrice}",
+                    text = "$$formattedPrice",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-
-                Text(
-                    text = if (isAvailable) {
-                        stringResource(R.string.detail_stock_available, product.stock)
-                    } else {
-                        stringResource(R.string.detail_out_of_stock)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isAvailable) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
-                )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            if (isAvailable) {
+            // 3. التحكم بالكمية
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "الكمية المطلوبة:",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    OutlinedIconButton(
+                        onClick = { if (quantity > 1) quantity-- },
+                        enabled = quantity > 1
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    }
+
                     Text(
-                        text = "الكمية المطلوبة:",
-                        style = MaterialTheme.typography.titleMedium
+                        text = quantity.toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    QuantitySelector(
-                        quantity = selectedQuantity,
-                        maxStock = product.stock,
-                        onQuantityChange = { selectedQuantity = it }
-                    )
+
+                    OutlinedIconButton(
+                        onClick = { if (quantity < product.stock) quantity++ },
+                        enabled = quantity < product.stock
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // استخدام المكون الحركي التفاعلي للوصف
-            ExpandableProductDescription(
-                description = product.description
+            // 4. وصف تفاصيل المنتج
+            Text(
+                text = "Product Details",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = product.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            // 5. زر الإضافة للسلة
+            PocketButton(
+                text = stringResource(R.string.detail_add_to_cart),
+                onClick = { onAddToCart(product, quantity) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            )
         }
     }
 }

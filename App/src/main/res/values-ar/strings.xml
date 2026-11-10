@@ -1,15 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">بوكيت ماركت</string>
-    <string name="cart_title">سلة التسوق</string>
-    <string name="cart_total">المجموع الإجمالي</string>
-    <string name="cart_checkout">إتمام الطلب</string>
-    <string name="cart_empty_title">السلة فارغة</string>
-    <string name="cart_empty_desc">لم تقم بإضافة أي منتجات إلى سلتك بعد.</string>
-    <string name="cart_remove">حذف المنتج من السلة</string>
+    <string name="common_retry">إعادة المحاولة</string>
+    <string name="common_loading">جاري التحميل...</string>
+    <string name="common_empty_title">لا توجد عناصر</string>
+    <string name="common_empty_description">لم نتمكن من العثور على أي عناصر لعرضها حالياً.</string>
+    <string name="common_error_title">حدث خطأ ما</string>
+    <string name="common_error_default">يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</string>
+
+    <string name="home_title">بوكيت ماركت</string>
+    <string name="home_search_hint">ابحث عن المنتجات...</string>
+    <string name="home_banner_title">عروض الموسم الحصرية</string>
+    <string name="home_banner_subtitle">خصومات تصل إلى 40% على الإلكترونيات</string>
+    <string name="home_categories_title">التصنيفات</string>
+    <string name="home_featured_title">منتجات مميزة</string>
+
+    <!-- الكتالوج والترتيب -->
+    <string name="category_all">الكل</string>
+    <string name="catalog_title">قائمة المنتجات</string>
+    <string name="catalog_search_hint">ابحث بالاسم أو الوصف...</string>
+    <string name="catalog_sort_label">ترتيب حسب</string>
+    <string name="catalog_sort_name_asc">أ-ي</string>
+    <string name="catalog_sort_price_low">الأقل سعراً</string>
+    <string name="catalog_sort_price_high">الأعلى سعراً</string>
+    <string name="catalog_no_results_title">لم نجد أي نتائج</string>
+    <string name="catalog_no_results_desc">جرّب استخدام كلمات بحث أخرى أو إزالة الفلاتر.</string>
+    <string name="sort_a_z">أ-ي</string>
+    <string name="sort_price_min">الأقل سعراً</string>
+    <string name="sort_price_max">الأعلى سعراً</string>
+
+    <!-- تفاصيل المنتج -->
     <string name="detail_title">تفاصيل المنتج</string>
     <string name="detail_add_to_cart">إضافة إلى السلة</string>
     <string name="detail_stock_available">المتوفر في المخزون: %1$d</string>
     <string name="detail_out_of_stock">غير متوفر حالياً</string>
     <string name="detail_description_title">عن المنتج</string>
+
+    <!-- السلة -->
+    <string name="cart_title">سلة التسوق</string>
+    <string name="cart_empty_title">السلة فارغة</string>
+    <string name="cart_empty_desc">لم تقم بإضافة أي منتجات إلى سلتك بعد.</string>
+    <string name="cart_subtotal">المجموع الفرعي</string>
+    <string name="cart_total">المجموع الإجمالي</string>
+    <string name="cart_checkout">إتمام الطلب</string>
+    <string name="cart_remove">حذف المنتج من السلة</string>
+    <string name="product_add_to_cart">إضافة</string>
 </resources>
