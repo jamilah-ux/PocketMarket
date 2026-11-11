@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -57,6 +58,7 @@ fun CatalogScreen(
     pagedProducts: Flow<PagingData<Product>>,
     cartItemsMap: Map<Long, Int> = emptyMap(),
     cartItemCount: Int = 0,
+    currentLanguage: String = "ar",
     onSearchChange: (String) -> Unit,
     onCategorySelect: (String) -> Unit,
     onSortOptionChange: (SortOption) -> Unit,
@@ -67,6 +69,7 @@ fun CatalogScreen(
     onDecreaseQuantity: (Product) -> Unit = {},
     onCartClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     onRefresh: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -81,16 +84,20 @@ fun CatalogScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.catalog_title)) },
+                title = { Text(if (currentLanguage == "en") "Product Catalog" else stringResource(R.string.catalog_title)) },
                 actions = {
-                    // 1. أيقونة البروفايل/الحساب الشخصي
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
                     IconButton(onClick = onProfileClick) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Profile"
                         )
                     }
-                    // 2. أيقونة السلة
                     IconButton(onClick = onCartClick) {
                         BadgedBox(
                             badge = {
@@ -107,7 +114,6 @@ fun CatalogScreen(
                             )
                         }
                     }
-                    // 3. أيقونة التبديل بين Grid و List
                     IconButton(onClick = onToggleLayoutMode) {
                         Icon(
                             imageVector = if (state.layoutMode == ViewLayoutMode.GRID) Icons.AutoMirrored.Filled.List else Icons.Default.Menu,
@@ -126,27 +132,56 @@ fun CatalogScreen(
             PocketTextField(
                 value = state.searchQuery,
                 onValueChange = onSearchChange,
-                label = stringResource(R.string.catalog_search_hint),
+                label = if (currentLanguage == "en") "Search by name or description..." else stringResource(R.string.catalog_search_hint),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
+            // أزرار التصنيفات الديناميكية المتوافقة مع اللغة
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(state.categories) { category ->
-                    val displayLabel = when (category.lowercase()) {
-                        "all" -> stringResource(R.string.category_all)
-                        "beauty" -> "جمال"
-                        "fragrances" -> "عطور"
-                        "furniture" -> "أثاث"
-                        "groceries" -> "منتجات غذائية"
-                        else -> category
+                items(state.categories) { categoryRaw ->
+                    val cleanCategory = categoryRaw
+                        .replace("Category(value=", "")
+                        .replace(")", "")
+                        .trim()
+
+                    val displayLabel = if (currentLanguage == "en") {
+                        when (cleanCategory.lowercase()) {
+                            "all" -> "All"
+                            "smartphones" -> "Smartphones"
+                            "laptops" -> "Laptops"
+                            "fragrances" -> "Fragrances"
+                            "skincare" -> "Skincare"
+                            "groceries" -> "Groceries"
+                            "home-decoration" -> "Home Decor"
+                            "furniture" -> "Furniture"
+                            "tops" -> "Tops"
+                            "womens-dresses" -> "Dresses"
+                            "beauty" -> "Beauty"
+                            else -> cleanCategory.replaceFirstChar { it.uppercase() }
+                        }
+                    } else {
+                        when (cleanCategory.lowercase()) {
+                            "all" -> stringResource(R.string.category_all)
+                            "smartphones" -> "هواتف ذكية"
+                            "laptops" -> "أجهزة لابتوب"
+                            "fragrances" -> "عطور"
+                            "skincare" -> "عناية بالبشرة"
+                            "groceries" -> "منتجات غذائية"
+                            "home-decoration" -> "ديكور منزل"
+                            "furniture" -> "أثاث"
+                            "tops" -> "ملابس"
+                            "womens-dresses" -> "فساتين نسائية"
+                            "beauty" -> "جمال"
+                            else -> cleanCategory
+                        }
                     }
 
                     PocketChip(
-                        selected = category == state.selectedCategory,
-                        onClick = { onCategorySelect(category) },
+                        selected = cleanCategory == state.selectedCategory || categoryRaw == state.selectedCategory,
+                        onClick = { onCategorySelect(cleanCategory) },
                         label = displayLabel
                     )
                 }
@@ -160,23 +195,23 @@ fun CatalogScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.catalog_sort_label),
+                    text = if (currentLanguage == "en") "Sort by" else stringResource(R.string.catalog_sort_label),
                     style = MaterialTheme.typography.labelMedium
                 )
                 PocketChip(
                     selected = state.sortOption == SortOption.NAME_ASC,
                     onClick = { onSortOptionChange(SortOption.NAME_ASC) },
-                    label = stringResource(R.string.catalog_sort_name_asc)
+                    label = if (currentLanguage == "en") "A-Z" else stringResource(R.string.catalog_sort_name_asc)
                 )
                 PocketChip(
                     selected = state.sortOption == SortOption.PRICE_LOW_HIGH,
                     onClick = { onSortOptionChange(SortOption.PRICE_LOW_HIGH) },
-                    label = stringResource(R.string.catalog_sort_price_low)
+                    label = if (currentLanguage == "en") "Price: Min" else stringResource(R.string.catalog_sort_price_low)
                 )
                 PocketChip(
                     selected = state.sortOption == SortOption.PRICE_HIGH_LOW,
                     onClick = { onSortOptionChange(SortOption.PRICE_HIGH_LOW) },
-                    label = stringResource(R.string.catalog_sort_price_high)
+                    label = if (currentLanguage == "en") "Price: Max" else stringResource(R.string.catalog_sort_price_high)
                 )
             }
 
@@ -205,8 +240,8 @@ fun CatalogScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             PocketEmptyState(
-                                title = stringResource(R.string.catalog_no_results_title),
-                                description = stringResource(R.string.catalog_no_results_desc)
+                                title = if (currentLanguage == "en") "No Products Found" else stringResource(R.string.catalog_no_results_title),
+                                description = if (currentLanguage == "en") "Try searching for something else." else stringResource(R.string.catalog_no_results_desc)
                             )
                         }
                     }

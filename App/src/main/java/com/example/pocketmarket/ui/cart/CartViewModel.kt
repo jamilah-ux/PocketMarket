@@ -37,6 +37,13 @@ class CartViewModel @Inject constructor() : ViewModel() {
     private val _effect = Channel<UiEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+    // لتخزين اللغة الحالية وإرسال الرسائل بناءً عليها
+    private var currentLanguage: String = "ar"
+
+    fun setLanguage(language: String) {
+        currentLanguage = language
+    }
+
     fun onAction(action: CartAction) {
         when (action) {
             is CartAction.AddProduct -> addProduct(action.product, action.quantity)
@@ -64,7 +71,12 @@ class CartViewModel @Inject constructor() : ViewModel() {
             )
         }
         viewModelScope.launch {
-            _effect.send(UiEffect.ShowSnackbar("تمت إضافة المنتج إلى السلة"))
+            val msg = if (currentLanguage == "en") {
+                "Added ${product.title} to cart"
+            } else {
+                "تمت إضافة ${product.title} إلى السلة"
+            }
+            _effect.send(UiEffect.ShowSnackbar(msg))
         }
     }
 
@@ -92,6 +104,14 @@ class CartViewModel @Inject constructor() : ViewModel() {
                 totalAmount = calculateTotal(updatedItems)
             )
         }
+        viewModelScope.launch {
+            val msg = if (currentLanguage == "en") {
+                "Item removed from cart"
+            } else {
+                "تم حذف المنتج من السلة"
+            }
+            _effect.send(UiEffect.ShowSnackbar(msg))
+        }
     }
 
     private fun clearCart() {
@@ -102,7 +122,12 @@ class CartViewModel @Inject constructor() : ViewModel() {
         if (_uiState.value.items.isEmpty()) return
         clearCart()
         viewModelScope.launch {
-            _effect.send(UiEffect.ShowSnackbar("تم إتمام الطلب بنجاح! شكرًا لتسوقك."))
+            val msg = if (currentLanguage == "en") {
+                "Order placed successfully! Thank you for shopping."
+            } else {
+                "تم إتمام الطلب بنجاح! شكرًا لتسوقك."
+            }
+            _effect.send(UiEffect.ShowSnackbar(msg))
         }
     }
 

@@ -53,22 +53,29 @@ import java.util.Locale
 @Composable
 fun CartScreen(
     items: List<CartItem>,
+    currentLanguage: String = "ar", // 👈 استقبال اللغة الحالية
     onBackClick: () -> Unit,
     onQuantityChange: (CartItem, Int) -> Unit,
     onRemoveItem: (CartItem) -> Unit,
     onCheckoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isEn = currentLanguage == "en"
     var itemToDelete by remember { mutableStateOf<CartItem?>(null) }
     val totalPrice = items.sumOf { it.product.discountedPrice * it.quantity }
     val formattedTotalPrice = String.format(Locale.US, "%.2f", totalPrice)
 
-    // نافذة تأكيد الحذف
+    // نافذة تأكيد الحذف المترجمة ديناميكياً
     itemToDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { itemToDelete = null },
-            title = { Text("حذف المنتج") },
-            text = { Text("هل أنت متأكد من رغبتك في حذف ${item.product.title} من السلة؟") },
+            title = { Text(if (isEn) "Delete Product" else "حذف المنتج") },
+            text = {
+                Text(
+                    if (isEn) "Are you sure you want to remove ${item.product.title} from cart?"
+                    else "هل أنت متأكد من رغبتك في حذف ${item.product.title} من السلة؟"
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -76,12 +83,12 @@ fun CartScreen(
                         itemToDelete = null
                     }
                 ) {
-                    Text("حذف", color = MaterialTheme.colorScheme.error)
+                    Text(if (isEn) "Delete" else "حذف", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { itemToDelete = null }) {
-                    Text("إلغاء")
+                    Text(if (isEn) "Cancel" else "إلغاء")
                 }
             }
         )
@@ -90,7 +97,7 @@ fun CartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.cart_title)) },
+                title = { Text(if (isEn) "Shopping Cart" else stringResource(R.string.cart_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -119,7 +126,7 @@ fun CartScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     PocketButton(
-                        text = "تصفح المنتجات",
+                        text = if (isEn) "Browse Products" else "تصفح المنتجات",
                         onClick = onBackClick,
                         modifier = Modifier.padding(horizontal = 32.dp)
                     )
@@ -161,7 +168,7 @@ fun CartScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "المجموع الإجمالي",
+                                text = if (isEn) "Total Amount" else "المجموع الإجمالي",
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
@@ -175,7 +182,7 @@ fun CartScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         PocketButton(
-                            text = stringResource(R.string.cart_checkout),
+                            text = if (isEn) "Checkout" else stringResource(R.string.cart_checkout),
                             onClick = onCheckoutClick,
                             modifier = Modifier
                                 .fillMaxWidth()

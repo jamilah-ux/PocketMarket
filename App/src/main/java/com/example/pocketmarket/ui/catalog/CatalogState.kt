@@ -2,25 +2,28 @@ package com.example.pocketmarket.ui.catalog
 
 import com.example.pocketmarket.domain.model.Product
 
-enum class SortOption {
-    NAME_ASC,
-    PRICE_LOW_HIGH,
-    PRICE_HIGH_LOW
+enum class ViewLayoutMode {
+    GRID, LIST
 }
 
-enum class ViewLayoutMode {
-    LIST,
-    GRID
+enum class SortOption {
+    NAME_ASC, PRICE_LOW_HIGH, PRICE_HIGH_LOW
 }
 
 data class CatalogUiState(
-    val isLoading: Boolean = false,
-    val allProducts: List<Product> = emptyList(), // تم إضافة هذه الخاصية
     val products: List<Product> = emptyList(),
     val categories: List<String> = emptyList(),
+    val selectedCategory: String = "all",
     val searchQuery: String = "",
-    val selectedCategory: String = "All",
     val sortOption: SortOption = SortOption.NAME_ASC,
     val layoutMode: ViewLayoutMode = ViewLayoutMode.GRID,
-    val errorMessage: String? = null
+    val isLoading: Boolean = false
 )
+
+sealed interface CatalogAction {
+    data class UpdateSearch(val query: String) : CatalogAction
+    data class SelectCategory(val category: String) : CatalogAction
+    data class ChangeSort(val sortOption: SortOption) : CatalogAction
+    data object ToggleLayout : CatalogAction
+    data object Refresh : CatalogAction
+}

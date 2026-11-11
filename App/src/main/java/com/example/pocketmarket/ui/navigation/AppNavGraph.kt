@@ -9,8 +9,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -45,24 +47,34 @@ import com.example.pocketmarket.ui.settings.SettingsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    modifier: Modifier = Modifier,
+    isDarkMode: Boolean = false,
+    onDarkModeToggle: (Boolean) -> Unit = {},
+    currentLanguage: String = "ar",
+    onLanguageChange: (String) -> Unit = {},
     catalogViewModel: CatalogViewModel = hiltViewModel(),
-    cartViewModel: CartViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    cartViewModel: CartViewModel = hiltViewModel()
 ) {
     val catalogState by catalogViewModel.uiState.collectAsStateWithLifecycle()
     val cartState by cartViewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // تحديث لغة الـ CartViewModel باستمرار مع كل تغيير للغة
+    LaunchedEffect(currentLanguage) {
+        cartViewModel.setLanguage(currentLanguage)
+    }
+
     val totalCartCount = cartState.items.sumOf { it.quantity }
     val cartItemsMap = cartState.items.associate { it.product.id to it.quantity }
 
+    // إشعارات السلة (تختفي تلقائياً بعد ثوانٍ قصيرة بدون زر إغلاق يدوي)
     LaunchedEffect(Unit) {
         cartViewModel.effect.collect { effect ->
             when (effect) {
                 is UiEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(
                         message = effect.message,
-                        actionLabel = effect.actionLabel
+                        duration = SnackbarDuration.Short
                     )
                 }
                 is UiEffect.Navigate -> navController.navigate(effect.route)
@@ -70,16 +82,20 @@ fun AppNavGraph(
         }
     }
 
+    // إشعارات الشبكة والكتالوج (تختفي تلقائياً، مع دعم زر إعادة المحاولة فقط عند انقطاع الإنترنت)
     LaunchedEffect(Unit) {
         catalogViewModel.effect.collect { effect ->
             when (effect) {
                 is UiEffect.ShowSnackbar -> {
                     val result = snackbarHostState.showSnackbar(
                         message = effect.message,
-                        actionLabel = effect.actionLabel
+                        actionLabel = if (effect.message.contains("لا يوجد") || effect.message.contains("No internet")) {
+                            if (currentLanguage == "en") "Retry" else "إعادة المحاولة"
+                        } else null,
+                        duration = SnackbarDuration.Short
                     )
-                    if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
-                        catalogViewModel.onAction(CatalogAction.Refresh)
+                    if (result == SnackbarResult.ActionPerformed) {
+                        catalogViewModel.refreshCatalog(isEnglish = currentLanguage == "en")
                     }
                 }
                 is UiEffect.Navigate -> navController.navigate(effect.route)
@@ -96,13 +112,14 @@ fun AppNavGraph(
             startDestination = ScreenRoute.Catalog.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // 1. شاشة الكتالوج
+            // 1. الكتالوج
             composable(route = ScreenRoute.Catalog.route) {
                 CatalogScreen(
                     state = catalogState,
                     pagedProducts = catalogViewModel.pagedProducts,
                     cartItemsMap = cartItemsMap,
                     cartItemCount = totalCartCount,
+                    currentLanguage = currentLanguage,
                     onSearchChange = { catalogViewModel.onAction(CatalogAction.UpdateSearch(it)) },
                     onCategorySelect = { catalogViewModel.onAction(CatalogAction.SelectCategory(it)) },
                     onSortOptionChange = { catalogViewModel.onAction(CatalogAction.ChangeSort(it)) },
@@ -137,11 +154,14 @@ fun AppNavGraph(
                     onProfileClick = {
                         navController.navigate("profile")
                     },
-                    onRefresh = { catalogViewModel.onAction(CatalogAction.Refresh) }
+                    onSettingsClick = {
+                        navController.navigate(ScreenRoute.Settings.route)
+                    },
+                    onRefresh = { catalogViewModel.refreshCatalog(isEnglish = currentLanguage == "en") }
                 )
             }
 
-            // 2. شاشة تفاصيل المنتج
+            // 2. تفاصيل المنتج
             composable(
                 route = ScreenRoute.Detail.route,
                 arguments = listOf(navArgument("productId") { type = NavType.LongType }),
@@ -170,7 +190,7 @@ fun AppNavGraph(
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("خطأ في المنتج") },
+                                title = { Text(if (currentLanguage == "en") "Product Error" else "خطأ في المنتج") },
                                 navigationIcon = {
                                     IconButton(onClick = { navController.popBackStack() }) {
                                         Icon(
@@ -184,18 +204,19 @@ fun AppNavGraph(
                     ) { p ->
                         Box(modifier = Modifier.padding(p)) {
                             PocketEmptyState(
-                                title = "المنتج غير موجود",
-                                description = "لم يتم العثور على المنتج برقم: $productId"
+                                title = if (currentLanguage == "en") "Product Not Found" else "المنتج غير موجود",
+                                description = if (currentLanguage == "en") "No product found with ID: $productId" else "لم يتم العثور على المنتج برقم: $productId"
                             )
                         }
                     }
                 }
             }
 
-            // 3. شاشة سلة التسوق
+            // 3. السلة
             composable(route = ScreenRoute.Cart.route) {
                 CartScreen(
                     items = cartState.items,
+                    currentLanguage = currentLanguage,
                     onBackClick = { navController.popBackStack() },
                     onQuantityChange = { item, qty ->
                         cartViewModel.onAction(CartAction.UpdateQuantity(item, qty))
@@ -209,7 +230,7 @@ fun AppNavGraph(
                 )
             }
 
-            // 4. شاشة إتمام الطلب (Checkout)
+            // 4. الدفع
             composable(route = "checkout") {
                 CheckoutScreen(
                     cartItems = cartState.items,
@@ -223,7 +244,7 @@ fun AppNavGraph(
                 )
             }
 
-            // 5. شاشة نجاح الطلب (Order Success)
+            // 5. نجاح الطلب
             composable(route = "order_success") {
                 OrderSuccessScreen(
                     onContinueShopping = {
@@ -232,16 +253,23 @@ fun AppNavGraph(
                 )
             }
 
-            // 6. شاشة البروفايل والطلبيات (Profile & Orders)
+            // 6. البروفايل والطلبيات
             composable(route = "profile") {
                 ProfileScreen(
+                    currentLanguage = currentLanguage,
                     onBackClick = { navController.popBackStack() }
                 )
             }
 
-            // 7. شاشة الإعدادات
+            // 7. الإعدادات والوضع الليلي وتغيير اللغة
             composable(route = ScreenRoute.Settings.route) {
-                SettingsScreen(onBackClick = { navController.popBackStack() })
+                SettingsScreen(
+                    isDarkMode = isDarkMode,
+                    onDarkModeToggle = onDarkModeToggle,
+                    currentLanguage = currentLanguage,
+                    onLanguageChange = onLanguageChange,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }
